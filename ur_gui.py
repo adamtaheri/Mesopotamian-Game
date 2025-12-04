@@ -2,7 +2,6 @@ import os
 import pygame
 import random
 import math
-import asyncio
 from typing import List, Tuple, Optional, Dict
 
 # =========================
@@ -134,8 +133,8 @@ class RoyalGameOfUr:
 # Layout
 SQUARE = 72
 GAP = 8
-# Extra horizontal room so there is more blank space to the left of the board
-MARGIN_X = 140
+# Extra horizontal room for piece racks and counters on left/right of board
+MARGIN_X = 170
 MARGIN_Y = 60
 
 BOARD_ROWS = 3
@@ -415,36 +414,20 @@ def draw_piece(screen, rect, player, count_here=1):
             pygame.draw.circle(screen, edge, (cx - 2, cy), inner_radius // 3, 0)
             pygame.draw.circle(screen, color, (cx, cy), inner_radius // 3, 0)
 
-async def main():
-    print("Starting game initialization...")
+def main():
     pygame.init()
-    print("Pygame initialized")
     screen = pygame.display.set_mode((WINDOW_W, WINDOW_H))
-    print(f"Display created: {WINDOW_W}x{WINDOW_H}")
-    pygame.display.set_caption("Royal Game of Ur")
+    pygame.display.set_caption("𒌫𒊒 - Royal Game of Ur - Ancient Mesopotamia")
     clock = pygame.time.Clock()
-    
-    # Yield to browser during init (required for pygbag)
-    await asyncio.sleep(0)
-    print("First yield complete")
 
-    font = pygame.font.Font(None, 28)
-    font_big = pygame.font.Font(None, 34)
-    print("Fonts loaded")
+    font = pygame.font.SysFont(None, 28)
+    font_big = pygame.font.SysFont(None, 34)
 
     # Load Bull of Heaven graphic for capture animation
-    bull_img = None
-    try:
-        bull_img = pygame.image.load("bull.png").convert_alpha()
-        bull_size = int(SQUARE * 1.5)
-        bull_img = pygame.transform.smoothscale(bull_img, (bull_size, bull_size))
-        print("Bull image loaded")
-    except Exception as e:
-        print(f"Could not load bull.png: {e}")
-        # Create a placeholder surface
-        bull_size = int(SQUARE * 1.5)
-        bull_img = pygame.Surface((bull_size, bull_size), pygame.SRCALPHA)
-        pygame.draw.circle(bull_img, (180, 120, 60), (bull_size//2, bull_size//2), bull_size//3)
+    bull_path = os.path.join(os.path.dirname(__file__), "bull.png")
+    bull_img = pygame.image.load(bull_path).convert_alpha()
+    bull_size = int(SQUARE * 1.5)
+    bull_img = pygame.transform.smoothscale(bull_img, (bull_size, bull_size))
 
     game = RoyalGameOfUr()
     squares = make_board_squares()
@@ -545,16 +528,8 @@ async def main():
                 return s.pos, s.owner
         return None, None
 
-    # Yield to browser before starting game loop (required for pygbag)
-    await asyncio.sleep(0)
-    print("Starting game loop...")
-    
     running = True
-    frame_count = 0
     while running:
-        frame_count += 1
-        if frame_count == 1:
-            print("First frame rendering...")
         mx, my = pygame.mouse.get_pos()
 
         for event in pygame.event.get():
@@ -603,7 +578,7 @@ async def main():
 
                     # Clicked off-board rack?
                     # We'll place racks as circles left side; detect via simple region test.
-                    rack_area = pygame.Rect(MARGIN_X - 45, MARGIN_Y, 40, BOARD_ROWS*(SQUARE + GAP))
+                    rack_area = pygame.Rect(MARGIN_X - 70, MARGIN_Y, 50, BOARD_ROWS*(SQUARE + GAP))
                     if rack_area.collidepoint(mx, my):
                         if piece_can_move(None):
                             selected_piece = None
@@ -614,6 +589,7 @@ async def main():
                 elif state == "await_dest":
                     pos_clicked, owner = rect_to_logical_pos_and_owner(mx, my)
                     p = game.current_player
+                    move_executed = False
 
                     if pos_clicked is not None:
                         # Destination must be on shared or current player's private squares
@@ -626,6 +602,7 @@ async def main():
                                     break
 
                             if chosen is not None:
+                                move_executed = True
                                 landing_pos = chosen[1]
                                 captured = chosen[3]
                                 extra = game.apply_move(p, chosen)
@@ -672,6 +649,12 @@ async def main():
                                     if next_state is not None:
                                         message = next_message
                                         state = next_state
+
+                    # If no move was executed, deselect and go back to piece selection
+                    if not move_executed:
+                        selected_piece = None
+                        message = f"Rolled {roll_value}. Select a piece."
+                        state = "await_select"
 
                 # --- Answering a quiz question ---
                 elif state == "await_quiz":
@@ -805,7 +788,7 @@ async def main():
                                 pygame.draw.rect(screen, HILITE, sq.rect, 5, border_radius=8)
                 # highlight offboard rack if enter move exists
                 if piece_can_move(None):
-                    rack_rect = pygame.Rect(MARGIN_X - 52, MARGIN_Y, 48, board_h)
+                    rack_rect = pygame.Rect(MARGIN_X - 70, MARGIN_Y, 50, board_h)
                     pygame.draw.rect(screen, HILITE, rack_rect, 4, border_radius=8)
 
             if state == "await_dest":
@@ -835,8 +818,8 @@ async def main():
             off_count = game.positions[p].count(-1)
             borne_count = game.positions[p].count(game.TRACK_LEN)
 
-            # Rack positions
-            rack_x = MARGIN_X - 30
+            # Rack positions - left side for waiting pieces
+            rack_x = MARGIN_X - 50
             rack_top = MARGIN_Y + (0 if p == 0 else 2)*(SQUARE + GAP)
             # Ancient-style off-board piece storage
             for i in range(off_count):
@@ -848,10 +831,15 @@ async def main():
                 pygame.draw.circle(screen, edge_color, (rack_x, cy), 7)      # Shadow
                 pygame.draw.circle(screen, piece_color, (rack_x, cy), 6)     # Main piece
                 pygame.draw.circle(screen, edge_color, (rack_x, cy), 4, 1)   # Inner ring
+            
+            # Left counter: pieces waiting to enter
+            counter_y = rack_top + SQUARE - 5
+            left_count_text = font.render(str(off_count), True, TEXT)
+            screen.blit(left_count_text, (rack_x - left_count_text.get_width()//2, counter_y))
                 
             # Borne-off pieces in ancient style on right
+            bx = MARGIN_X + board_w + 40
             for i in range(borne_count):
-                bx = MARGIN_X + board_w + 18
                 by = rack_top + 10 + i*14
                 piece_color = WHITE_PIECE if p == 0 else BLACK_PIECE
                 edge_color = WHITE_EDGE if p == 0 else BLACK_EDGE
@@ -861,6 +849,10 @@ async def main():
                 pygame.draw.circle(screen, piece_color, (bx, by), 6)
                 # Victory marking - small star
                 pygame.draw.circle(screen, edge_color, (bx, by), 2, 0)
+            
+            # Right counter: pieces that have crossed/finished
+            right_count_text = font.render(str(borne_count), True, TEXT)
+            screen.blit(right_count_text, (bx - right_count_text.get_width()//2, counter_y))
 
         # Bull of Heaven capture animation
         if state == "capture_anim" and capture_square is not None:
@@ -926,7 +918,7 @@ async def main():
 
         # Panel text
         render_text(f"Turn: {game.PLAYER_NAMES[game.current_player]}", panel_x, MARGIN_Y + 140, big=True)
-        render_text("Rosettes: 3, 7, 13", panel_x, MARGIN_Y + 180, color=MUTED)
+       
 
         if roll_value is None:
             render_text("Roll: —", panel_x, MARGIN_Y + 220, big=True)
@@ -990,10 +982,9 @@ async def main():
 
         pygame.display.flip()
         clock.tick(60)
-        await asyncio.sleep(0)
 
     pygame.quit()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
