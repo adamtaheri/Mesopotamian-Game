@@ -419,7 +419,7 @@ def draw_piece(screen, rect, player, count_here=1):
 async def main():
     pygame.init()
     screen = pygame.display.set_mode((WINDOW_W, WINDOW_H))
-    pygame.display.set_caption("𒌫𒊒 - Royal Game of Ur - Ancient Mesopotamia")
+    pygame.display.set_caption("Mesoptamian Lit Final Project by Adam Taheri")
     clock = pygame.time.Clock()
 
     font = pygame.font.SysFont(None, 28)
