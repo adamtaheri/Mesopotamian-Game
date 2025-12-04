@@ -1,4 +1,5 @@
 import os
+import asyncio
 import pygame
 import random
 import math
@@ -415,7 +416,7 @@ def draw_piece(screen, rect, player, count_here=1):
             pygame.draw.circle(screen, edge, (cx - 2, cy), inner_radius // 3, 0)
             pygame.draw.circle(screen, color, (cx, cy), inner_radius // 3, 0)
 
-def main():
+async def main():
     pygame.init()
     screen = pygame.display.set_mode((WINDOW_W, WINDOW_H))
     pygame.display.set_caption("𒌫𒊒 - Royal Game of Ur - Ancient Mesopotamia")
@@ -986,9 +987,10 @@ def main():
 
         pygame.display.flip()
         clock.tick(60)
+        await asyncio.sleep(0)  # Yield to browser event loop
 
     pygame.quit()
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
