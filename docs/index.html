@@ -157,9 +157,9 @@ async def custom_site():
     def ui_callback(pkg, error=None):
         nonlocal fnt
         if error:
-            prompt = fnt.render(f"{error}", True, (220, 200, 160))  # Warm parchment
+            prompt = fnt.render(f"{error}", True, (255, 215, 50))  # Bright gold
         else:
-            prompt = fnt.render(f"Setting [{pkg}] up", True, (220, 200, 160))  # Warm parchment
+            prompt = fnt.render(f"Setting [{pkg}] up", True, (255, 215, 50))  # Bright gold
         pg_bar(track.len)
         screen.blit(prompt, ( marginx+ ux(80), marginy - uy(10) ) )
         compose()
@@ -169,7 +169,7 @@ async def custom_site():
 
         # now make a prompt
         fnt = pygame.sysfont.SysFont("freesans",  uy(80) )
-        prompt = fnt.render("Click to Start!", True, (220, 180, 100))  # Gold accent
+        prompt = fnt.render("Click to Start!", True, (255, 215, 50))  # Bright gold
         pg_bar(track.len)
         screen.blit(prompt, ( marginx+ ux(80), marginy - uy(10) ) )
         compose()
