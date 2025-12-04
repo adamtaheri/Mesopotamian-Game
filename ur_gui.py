@@ -416,21 +416,35 @@ def draw_piece(screen, rect, player, count_here=1):
             pygame.draw.circle(screen, color, (cx, cy), inner_radius // 3, 0)
 
 async def main():
+    print("Starting game initialization...")
     pygame.init()
+    print("Pygame initialized")
     screen = pygame.display.set_mode((WINDOW_W, WINDOW_H))
-    pygame.display.set_caption("𒌫𒊒 - Royal Game of Ur - Ancient Mesopotamia")
+    print(f"Display created: {WINDOW_W}x{WINDOW_H}")
+    pygame.display.set_caption("Royal Game of Ur")
     clock = pygame.time.Clock()
     
     # Yield to browser during init (required for pygbag)
     await asyncio.sleep(0)
+    print("First yield complete")
 
     font = pygame.font.Font(None, 28)
     font_big = pygame.font.Font(None, 34)
+    print("Fonts loaded")
 
     # Load Bull of Heaven graphic for capture animation
-    bull_img = pygame.image.load("bull.png").convert_alpha()
-    bull_size = int(SQUARE * 1.5)
-    bull_img = pygame.transform.smoothscale(bull_img, (bull_size, bull_size))
+    bull_img = None
+    try:
+        bull_img = pygame.image.load("bull.png").convert_alpha()
+        bull_size = int(SQUARE * 1.5)
+        bull_img = pygame.transform.smoothscale(bull_img, (bull_size, bull_size))
+        print("Bull image loaded")
+    except Exception as e:
+        print(f"Could not load bull.png: {e}")
+        # Create a placeholder surface
+        bull_size = int(SQUARE * 1.5)
+        bull_img = pygame.Surface((bull_size, bull_size), pygame.SRCALPHA)
+        pygame.draw.circle(bull_img, (180, 120, 60), (bull_size//2, bull_size//2), bull_size//3)
 
     game = RoyalGameOfUr()
     squares = make_board_squares()
@@ -533,9 +547,14 @@ async def main():
 
     # Yield to browser before starting game loop (required for pygbag)
     await asyncio.sleep(0)
+    print("Starting game loop...")
     
     running = True
+    frame_count = 0
     while running:
+        frame_count += 1
+        if frame_count == 1:
+            print("First frame rendering...")
         mx, my = pygame.mouse.get_pos()
 
         for event in pygame.event.get():
