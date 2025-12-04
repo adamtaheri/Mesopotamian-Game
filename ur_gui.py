@@ -420,6 +420,9 @@ async def main():
     screen = pygame.display.set_mode((WINDOW_W, WINDOW_H))
     pygame.display.set_caption("𒌫𒊒 - Royal Game of Ur - Ancient Mesopotamia")
     clock = pygame.time.Clock()
+    
+    # Yield to browser during init (required for pygbag)
+    await asyncio.sleep(0)
 
     font = pygame.font.Font(None, 28)
     font_big = pygame.font.Font(None, 34)
@@ -528,6 +531,9 @@ async def main():
                 return s.pos, s.owner
         return None, None
 
+    # Yield to browser before starting game loop (required for pygbag)
+    await asyncio.sleep(0)
+    
     running = True
     while running:
         mx, my = pygame.mouse.get_pos()
