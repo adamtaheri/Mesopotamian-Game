@@ -860,7 +860,7 @@ async def main():
             screen.blit(right_count_text, (bx + 20, counter_y))
 
         # Course information text below the board
-        course_y = MARGIN_Y + board_h + 30
+        course_y = MARGIN_Y + board_h + 60
         course_text1 = font.render("NEHC 20004: Mesopotamian Literature (Autumn 2025)", True, MUTED)
         course_text2 = font.render("Professor Paulus", True, MUTED)
         course_x = MARGIN_X + (board_w - course_text1.get_width()) // 2
