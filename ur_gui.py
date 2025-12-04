@@ -141,7 +141,8 @@ BOARD_ROWS = 3
 BOARD_COLS = 9  # Added one column for bear-off squares
 
 SIDE_PANEL_W = 280
-WINDOW_W = MARGIN_X*2 + BOARD_COLS*SQUARE + (BOARD_COLS-1)*GAP + SIDE_PANEL_W
+PANEL_GAP = 100  # Gap between board area and side panel
+WINDOW_W = MARGIN_X*2 + BOARD_COLS*SQUARE + (BOARD_COLS-1)*GAP + PANEL_GAP + SIDE_PANEL_W
 # Extra vertical space so the side-panel quiz UI fits fully on screen
 EXTRA_PANEL_H = 220
 WINDOW_H = MARGIN_Y*2 + BOARD_ROWS*SQUARE + (BOARD_ROWS-1)*GAP + EXTRA_PANEL_H
@@ -455,7 +456,7 @@ def main():
     post_capture_message: str = ""
 
     # Buttons
-    panel_x = MARGIN_X + BOARD_COLS*(SQUARE + GAP) + 20
+    panel_x = MARGIN_X + BOARD_COLS*(SQUARE + GAP) + PANEL_GAP
     roll_btn = pygame.Rect(panel_x, MARGIN_Y + 10, SIDE_PANEL_W - 40, 50)
     cont_btn = pygame.Rect(panel_x, MARGIN_Y + 70, SIDE_PANEL_W - 40, 50)
 
