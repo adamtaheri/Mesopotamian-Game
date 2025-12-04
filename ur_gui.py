@@ -790,7 +790,8 @@ def main():
                 # highlight offboard rack if enter move exists (only current player's row)
                 if piece_can_move(None):
                     rack_y = MARGIN_Y + (0 if p == 0 else 2) * (SQUARE + GAP)
-                    rack_rect = pygame.Rect(MARGIN_X - 70, rack_y, 60, SQUARE)
+                    # Height covers all 7 stacked pieces: start at rack_y+3, end at rack_y+101
+                    rack_rect = pygame.Rect(MARGIN_X - 70, rack_y, 60, 110)
                     pygame.draw.rect(screen, HILITE, rack_rect, 4, border_radius=8)
 
             if state == "await_dest":
