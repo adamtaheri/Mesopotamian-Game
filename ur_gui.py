@@ -859,6 +859,15 @@ async def main():
             right_count_text = font.render(str(borne_count), True, TEXT)
             screen.blit(right_count_text, (bx + 20, counter_y))
 
+        # Course information text below the board
+        course_y = MARGIN_Y + board_h + 30
+        course_text1 = font.render("NEHC 20004: Mesopotamian Literature (Autumn 2025)", True, MUTED)
+        course_text2 = font.render("Professor Paulus", True, MUTED)
+        course_x = MARGIN_X + (board_w - course_text1.get_width()) // 2
+        screen.blit(course_text1, (course_x, course_y))
+        course_x2 = MARGIN_X + (board_w - course_text2.get_width()) // 2
+        screen.blit(course_text2, (course_x2, course_y + 25))
+
         # Bull of Heaven capture animation
         if state == "capture_anim" and capture_square is not None:
             target_squares = squares_for_pos(capture_square)
