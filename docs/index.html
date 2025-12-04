@@ -1,489 +1,1003 @@
-<html lang="en-us"><script src="https://pygame-web.github.io/archives/0.9/pythons.js" type=module id=site data-LINES=57 data-CONSOLE=25 data-python=python3.12 data-os=vtx,fs,snd,gui async defer>#<!--
-
-print("""
-Loading mesopotamian-game from mesopotamian-game.apk
-    Pygbag Version : 0.9.2
-    Template Version : 0.9.0
-    Python  : 3.12
-    CDN URL : https://pygame-web.github.io/archives/0.9/
-    Screen  : 1280x720
-    Title   : mesopotamian-game
-    Folder  : mesopotamian-game
-    Authors : pgw
-    SPDX-License-Identifier: cookiecutter.spdx
-
-""")
-
-
-# screen pixels (real, hardware)
-WIDTH=1024  # 1280
-HEIGHT=600  # 720
-
-# reference/idealized screen pixels
-REFX = 1980
-REFY = 1080
-
-def u(real, ref, v):
-    if abs(v)<0.9999999:
-        result = int( (float(real)/100.0) * (v*1000))
-        if v<0:
-            return real-result
-        return result
-    return int( (real/ref) * v )
-
-def ux(*argv):
-    global WIDTH, REFX
-    acc = 0
-    for v in argv:
-        acc += u(WIDTH, REFX, v)
-    return acc
-
-def uy(*argv):
-    global HEIGHT, REFY
-    acc = 0
-    for v in argv:
-        acc += u(HEIGHT, REFY, v)
-    return acc
-
-
-
-
-# do not rename
-async def custom_site():
-
-    import sys
-    import asyncio
-    import platform
-    import json
-    from pathlib import Path
-
-
-
-    import embed
-
-
-    platform.document.body.style.background = "#7f7f7f"
-
-    import pygame
-
-    def compose():
-        pygame.display.update()
-        window.chromakey(None, *screen.get_colorkey(), 40)
-
-    pygame.init()
-    pygame.font.init()
-
-    screen = pygame.display.set_mode([ux(.100),uy(.100)], pygame.SRCALPHA, 32)
-    screen.set_colorkey( (0,0,0,0), pygame.RLEACCEL )
-    screen.fill( (0,0,0,0) )
-
-    compose()
-
-    platform.window.transfer.hidden = true
-    platform.window.canvas.style.visibility = "visible"
-
-
-
-    apk = "mesopotamian-game.apk"
-
-    bundle = "mesopotamian-game"
-
-    # the C or js loader could do that but be explicit.
-    appdir = Path(f"/data/data/{bundle}") # /data/data/mesopotamian-game
-    appdir.mkdir()
-
-
-    # mount apk
-
-    cfg = {
-        "io": "url",
-        "type":"mount",
-        "mount" : {
-            "point" : appdir.as_posix(),
-            "path" : "/",
-        },
-        "path" : f"/ => {appdir.as_posix()}",
-    }
-
-
-    track = platform.window.MM.prepare(apk, json.dumps(cfg))
-
-    marginx = ux(.020) # 20%
-    marginy = uy(.045) # 45%
-
-
-    def pg_bar(pos):
-        nonlocal marginx, marginy
-        # resolution of progress bar, recalculate since it may not be know yet.
-        total = track.len or 10  # avoid div0
-        slot = ux(.060)/ total # 60%
-
-        pygame.draw.rect(screen,(10,10,10),( marginx-ux(10), marginy-uy(10), (total*slot)+ux(20), uy(110) ) )
-        pygame.draw.rect(screen,(0,255,0), ( marginx, marginy, track.pos*slot, uy(90)) )
-
-    # wait until zip mount + overlayfs is complete
-    while not track.ready:
-        pg_bar(track.pos)
-        compose()
-        await asyncio.sleep(.1)
-
-    # fill it up in case it was cached and instant download
-    pg_bar(track.len)
-    compose()
-
-
-    # preloader will change dir and prepend it to sys.path
-    platform.run_main(PyConfig, loaderhome= appdir / "assets", loadermain=None)
-
-
-    # wait preloading complete
-    # that includes images and wasm compilation of bundled modules
-    while embed.counter()<0:
-        await asyncio.sleep(.1)
-
-    main = appdir / "assets" / "main.py"
-
-    # start async top level machinery and add a console.
-    await TopLevel_async_handler.start_toplevel(platform.shell, console=window.python.config.debug)
-
-    # now that apk is mounted we have access to font cache
-    # but we need to fill __file__ that is not yet set
-    __import__(__name__).__file__ = str(main)
-
-
-    # now make a prompt
-    fnt = pygame.sysfont.SysFont("freesans",  uy(80) )
-
-    def ui_callback(pkg, error=None):
-        nonlocal fnt
-        if error:
-            prompt = fnt.render(f"{error}", True, "black")
-        else:
-            prompt = fnt.render(f"Setting [{pkg}] up", True, "black")
-        pg_bar(track.len)
-        screen.blit(prompt, ( marginx+ ux(80), marginy - uy(10) ) )
-        compose()
-
-    # test/wait if user media interaction required
-    if not platform.window.MM.UME:
-
-        # now make a prompt
-        fnt = pygame.sysfont.SysFont("freesans",  uy(80) )
-        prompt = fnt.render("Ready to start !", True, "blue")
-        pg_bar(track.len)
-        screen.blit(prompt, ( marginx+ ux(80), marginy - uy(10) ) )
-        compose()
-        print("""
-        * Waiting for media user engagement : please click/touch page *
-    """)
-        while not platform.window.MM.UME:
-            await asyncio.sleep(.1)
-
-    # cleanup
-    screen.fill( (0,0,0,0) )
-    pygame.display.flip()
-
-    await shell.runpy(main, callback=ui_callback)
-
-
-
-import asyncio
-
-asyncio.run( custom_site() )
-
-
-
-
-
-
-
-
-
-
-
-
-# BEGIN BLOCK
-#
-# now this is the html part you can (and should) customize
-# It is not mandatory : pygame-script when it reads the first line (also called
-# shebang ) of above code create absolute minimal widget set
-# required for running with default rules
-#
-# do not alter that comment block it is separating python code from html code
-# =============================================================================
-# --></script><head><!--
-//=============================================================================
-//
-//
-//
-//
-//
-//
-//
-
-    {%- if cookiecutter.comment != "" -%}
-{{cookiecutter.comment}}
-    {% endif %}
-
---><script type="application/javascript">
-// END BLOCK
-
-
-
-// this dict is available under PyConfig.config from __main__
-
-config = {
-    xtermjs : "1" ,
-    _sdl2 : "canvas",
-    user_canvas : 0,
-    user_canvas_managed : 0,
-    ume_block : 1,
-    can_close : 0,
-    archive : "mesopotamian-game",
-    gui_debug : 3,
-    cdn : "https://pygame-web.github.io/archives/0.9/",
-    autorun : 0,
-    PYBUILD : "3.12"
-}
-
-</script>
-
-    <title>mesopotamian-game</title>
+<!DOCTYPE html>
+<html lang="en">
+<head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="viewport" content="height=device-height, initial-scale=1.0">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes"/>
-
-    <link rel="prefetch" href="https://pygame-web.github.io/archives/0.9/pythonrc.py">
-    <link rel="prefetch" href="https://pygame-web.github.io/archives/0.9/vt/xterm.js">
-    <link rel="prefetch" href="https://pygame-web.github.io/archives/0.9/vt/xterm-addon-image.js">
-    <link rel="prefetch" href="https://pygame-web.github.io/archives/0.9/vt/xterm-addon-image.js">
-
-
-    <link rel="icon" type="image/png" href="favicon.png" sizes="16x16">
-
+    <title>𒌫𒊒 Royal Game of Ur</title>
     <style>
-        #status {
-            display: inline-block;
-            vertical-align: top;
-            margin-top: 20px;
-            margin-left: 30px;
-            font-weight: bold;
-            color: rgb(120, 120, 120);
-        }
-
-        #progress {
-            height: 20px;
-            width: 300px;
-        }
-
-        div.emscripten { text-align: center; }
-        div.emscripten_border { border: 1px solid black; }
-        div.thick_border { border: 4px solid black; }
-
-        /* the canvas *must not* have any border or padding, or mouse coords will be wrong */
-        /* average size of droid screen 470dp x 320dp  */
-        canvas.emscripten {
-            border: 0px none;
-            background-color: transparent;
-            width: 100%;
-            height: 100%;
-            z-index: 5;
-
-            padding: 0;
-            margin: 0 auto;
-
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            left: 0;
-            right: 0;
-        }
-
-        body {
-            font-family: arial;
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap');
+        
+        * {
             margin: 0;
-            padding: none;
-            background-color:powderblue;
+            padding: 0;
+            box-sizing: border-box;
         }
-
-        .topright{
-           position:absolute;
-           top:0px;
-           right:0px;
+        
+        body {
+            background: linear-gradient(135deg, #1a1510 0%, #2d241a 50%, #1a1510 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Cinzel', serif;
+            color: #dcc8a0;
+            padding: 20px;
         }
-
-        .bottomright {
-            position:absolute;
-            top: 40%;
-            right: 0px;
+        
+        .game-container {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
         }
-
-        .center {
+        
+        .board-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        h1 {
+            font-size: 1.8rem;
+            color: #e8d5a8;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            letter-spacing: 3px;
+        }
+        
+        .subtitle {
+            font-size: 0.9rem;
+            color: #8c7a5a;
+            margin-top: -10px;
+        }
+        
+        .board-wrapper {
+            background: linear-gradient(145deg, #55473a, #3d3228);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 
+                0 10px 30px rgba(0,0,0,0.5),
+                inset 0 1px 0 rgba(255,255,255,0.1);
+            border: 3px solid #6b5a45;
+        }
+        
+        .board {
+            display: grid;
+            grid-template-columns: repeat(8, 70px) 80px;
+            grid-template-rows: repeat(3, 70px);
+            gap: 6px;
+        }
+        
+        .square {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(145deg, #8a7560, #6b5a48);
+            border-radius: 8px;
+            border: 2px solid #9a8570;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        
+        .square:hover {
+            transform: scale(1.02);
+        }
+        
+        .square.highlight {
+            box-shadow: 0 0 15px 3px #ffd700;
+            border-color: #ffd700;
+        }
+        
+        .square.destination {
+            box-shadow: 0 0 15px 3px #4a90d9;
+            border-color: #4a90d9;
+        }
+        
+        .square.empty {
+            background: transparent;
+            border: none;
+            cursor: default;
+        }
+        
+        .square.empty:hover {
+            transform: none;
+        }
+        
+        .square.rosette {
+            background: linear-gradient(145deg, #b8956b, #8a6d45);
+        }
+        
+        .square.rosette::before {
+            content: '✦';
+            position: absolute;
+            font-size: 2rem;
+            color: #daa520;
+            text-shadow: 0 0 10px #ffd700;
+        }
+        
+        .square.bear-off {
+            width: 80px;
+            background: linear-gradient(145deg, #4a3d32, #3a2f26);
+            border-style: dashed;
+            border-color: #6b5a45;
+        }
+        
+        .square.bear-off::after {
+            content: '⌐';
+            position: absolute;
+            font-size: 1.5rem;
+            color: #6b5a45;
+        }
+        
+        .piece {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            position: absolute;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            z-index: 10;
+        }
+        
+        .piece.white {
+            background: linear-gradient(145deg, #f0e6d2, #d4c8b0);
+            border: 3px solid #a09080;
+            color: #5a4a3a;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        .piece.black {
+            background: linear-gradient(145deg, #4a3a2a, #3a2a1a);
+            border: 3px solid #6a5a4a;
+            color: #c0b0a0;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        .piece.white::after {
+            content: '☀';
+        }
+        
+        .piece.black::after {
+            content: '☽';
+        }
+        
+        .rack {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            padding: 10px;
+            min-height: 200px;
+        }
+        
+        .rack-piece {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .rack-piece:hover {
+            transform: scale(1.1);
+        }
+        
+        .rack-piece.white {
+            background: linear-gradient(145deg, #f0e6d2, #d4c8b0);
+            border: 2px solid #a09080;
+        }
+        
+        .rack-piece.black {
+            background: linear-gradient(145deg, #4a3a2a, #3a2a1a);
+            border: 2px solid #6a5a4a;
+        }
+        
+        .rack-piece.highlight {
+            box-shadow: 0 0 10px 2px #ffd700;
+        }
+        
+        .side-panel {
+            background: linear-gradient(145deg, #3d3228, #2d241a);
+            padding: 25px;
+            border-radius: 15px;
+            min-width: 250px;
+            border: 2px solid #5a4a3a;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .panel-title {
+            font-size: 1.2rem;
+            color: #e8d5a8;
+            margin-bottom: 20px;
+            text-align: center;
+            border-bottom: 1px solid #5a4a3a;
+            padding-bottom: 10px;
+        }
+        
+        .turn-display {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .turn-label {
+            font-size: 0.9rem;
+            color: #8c7a5a;
+        }
+        
+        .turn-player {
+            font-size: 1.4rem;
+            color: #e8d5a8;
+            margin-top: 5px;
+        }
+        
+        .dice-section {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .dice-display {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin: 15px 0;
+        }
+        
+        .die {
+            width: 35px;
+            height: 35px;
+            background: linear-gradient(145deg, #f5eed9, #e0d5c0);
+            border-radius: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2rem;
+            border: 2px solid #a09080;
+        }
+        
+        .die.marked {
+            background: linear-gradient(145deg, #2a2015, #1a1510);
+            color: #daa520;
+        }
+        
+        .roll-total {
+            font-size: 1.5rem;
+            color: #daa520;
+            margin-top: 10px;
+        }
+        
+        button {
+            width: 100%;
+            padding: 15px;
+            font-family: 'Cinzel', serif;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 10px;
+        }
+        
+        .roll-btn {
+            background: linear-gradient(145deg, #8a6d45, #6b5535);
+            color: #f0e6d2;
+            border: 2px solid #a08060;
+        }
+        
+        .roll-btn:hover:not(:disabled) {
+            background: linear-gradient(145deg, #9a7d55, #7b6545);
+            transform: translateY(-2px);
+        }
+        
+        .roll-btn:disabled {
+            background: #4a3d32;
+            color: #6b5a45;
+            cursor: not-allowed;
+            border-color: #5a4a3a;
+        }
+        
+        .continue-btn {
+            background: linear-gradient(145deg, #5a4a3a, #4a3a2a);
+            color: #a09080;
+            border: 2px solid #6b5a45;
+        }
+        
+        .continue-btn:hover:not(:disabled) {
+            background: linear-gradient(145deg, #6a5a4a, #5a4a3a);
+        }
+        
+        .continue-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .message {
+            text-align: center;
+            padding: 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            margin-top: 15px;
+            min-height: 50px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
-
-        .trinfo{
-           position:relative;
-           right:0px;
-           border: 1px solid black;
+        
+        .instructions {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #5a4a3a;
         }
-
-        .framed{
-           position:relative;
-           top:150px;
-           right:10px;
-           border: 1px solid black;
+        
+        .instructions h3 {
+            font-size: 0.9rem;
+            color: #a09080;
+            margin-bottom: 10px;
+        }
+        
+        .instructions p {
+            font-size: 0.8rem;
+            color: #6b5a45;
+            margin: 5px 0;
+        }
+        
+        .score-display {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+        }
+        
+        .score {
+            text-align: center;
+        }
+        
+        .score-label {
+            font-size: 0.8rem;
+            color: #8c7a5a;
+        }
+        
+        .score-value {
+            font-size: 1.2rem;
+            color: #daa520;
+        }
+        
+        /* Quiz Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        .quiz-modal {
+            background: linear-gradient(145deg, #3d3228, #2d241a);
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 600px;
+            width: 90%;
+            border: 3px solid #6b5a45;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        
+        .quiz-title {
+            font-size: 1.3rem;
+            color: #daa520;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .quiz-question {
+            font-size: 1rem;
+            color: #e8d5a8;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+        
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .quiz-option {
+            padding: 12px 20px;
+            background: linear-gradient(145deg, #5a4a3a, #4a3a2a);
+            border: 2px solid #6b5a45;
+            border-radius: 8px;
+            color: #dcc8a0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+        }
+        
+        .quiz-option:hover {
+            background: linear-gradient(145deg, #6a5a4a, #5a4a3a);
+            border-color: #8a7a5a;
+        }
+        
+        .quiz-option.correct {
+            background: linear-gradient(145deg, #2a6030, #1a4020);
+            border-color: #3a8040;
+        }
+        
+        .quiz-option.incorrect {
+            background: linear-gradient(145deg, #6a2a2a, #4a1a1a);
+            border-color: #8a3a3a;
+        }
+        
+        /* Win Modal */
+        .win-modal {
+            text-align: center;
+        }
+        
+        .win-title {
+            font-size: 2rem;
+            color: #daa520;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(218, 165, 32, 0.5);
+        }
+        
+        .win-message {
+            font-size: 1.2rem;
+            color: #e8d5a8;
+            margin-bottom: 30px;
+        }
+        
+        .new-game-btn {
+            background: linear-gradient(145deg, #8a6d45, #6b5535);
+            color: #f0e6d2;
+            border: 2px solid #a08060;
+            padding: 15px 40px;
+            font-size: 1.1rem;
         }
     </style>
-
-    <script src="https://pygame-web.github.io/archives/0.9//browserfs.min.js"></script>
-
 </head>
-
 <body>
-
-    <div id="transfer" align=center>
-<!--        <div class="spinner" id='spinner'></div> -->
-        <div class="emscripten" id="status">Downloading...</div>
-        <div class="emscripten">
-            <progress value="0" max="100" id="progress"></progress>
-        </div>
-    </div>
-
-
-    <canvas class="emscripten" id="canvas"
-width="1px"
-height="1px"
-    oncontextmenu="event.preventDefault()" tabindex=1>
-    </canvas>
-
-    <div id=html></div>
-
-    <div id=crt  class=bottomright >
-
-        <div id="system" hidden>
-            <div class="button-container">
-                <button id="aiostop" disabled>AIO ⏏︎</button>
-                <button id="aiopaused_true" disabled>AIO ■</button>
-                <button id="aiopaused_false" disabled>AIO ▶</button>
-                <button id="pygame_mixer_music_pause" disabled>Music ■</button>
+    <div class="game-container">
+        <div class="board-section">
+            <h1>𒌫𒊒 ROYAL GAME OF UR</h1>
+            <p class="subtitle">Ancient Mesopotamia, c. 2600 BCE</p>
+            
+            <div class="board-wrapper">
+                <div class="board" id="board"></div>
             </div>
-
-            <div class="button-container">
-                <div id=load_min>min</div>
-                <div id=load_avg>avg</div>
-                <div id=load_max>max</div>
-              <button id="load_rst" disabled>RESET</button>
+        </div>
+        
+        <div class="side-panel">
+            <div class="panel-title">Game Controls</div>
+            
+            <div class="turn-display">
+                <div class="turn-label">Current Turn</div>
+                <div class="turn-player" id="turn-display">White</div>
             </div>
-
-            <div id="level">(battery level unknown)</div>
-            <div id="stateBattery">(charging state unknown)</div>
-
+            
+            <div class="score-display">
+                <div class="score">
+                    <div class="score-label">White Home</div>
+                    <div class="score-value" id="white-score">0/7</div>
+                </div>
+                <div class="score">
+                    <div class="score-label">Black Home</div>
+                    <div class="score-value" id="black-score">0/7</div>
+                </div>
+            </div>
+            
+            <div class="dice-section">
+                <div class="dice-display" id="dice-display">
+                    <div class="die">?</div>
+                    <div class="die">?</div>
+                    <div class="die">?</div>
+                    <div class="die">?</div>
+                </div>
+                <div class="roll-total" id="roll-total">Roll: —</div>
+            </div>
+            
+            <button class="roll-btn" id="roll-btn" onclick="rollDice()">Roll Dice</button>
+            <button class="continue-btn" id="continue-btn" onclick="endTurn()" disabled>Continue</button>
+            
+            <div class="message" id="message">Click Roll to start!</div>
+            
+            <div class="instructions">
+                <h3>How to Play</h3>
+                <p>1. Roll the dice</p>
+                <p>2. Click a highlighted piece</p>
+                <p>3. Click a blue destination</p>
+                <p>✦ Rosettes grant extra turns</p>
+                <p>Land on opponents to capture!</p>
+            </div>
         </div>
-
-        <div id=box class="emscripten_border" hidden=true>
-
-            <div id="info" class="trinfo"></div>
-
-            <iframe id="iframe" class="framed" name="iframe"
-width="470px" height="90%"
-allowtransparency="true"
-style="z-index: 10;"
-style="background: #FFFFFF;"
-frameborder="1"
-                allowfullscreen="true"
-                webkitallowfullscreen="true"
-                msallowfullscreen="true"
-                mozallowfullscreen="true"
-                sandbox="allow-same-origin allow-top-navigation allow-scripts allow-pointer-lock"
-                allow="autoplay; fullscreen *; geolocation; microphone; camera; midi; monetization; xr-spatial-tracking; gamepad; gyroscope; accelerometer; xr; cross-origin-isolated"
-                src="https://pygame-web.github.io/archives/0.9/empty.html"
-                scrolling="yes">
-            </iframe>
+    </div>
+    
+    <div class="modal-overlay" id="quiz-modal">
+        <div class="quiz-modal">
+            <div class="quiz-title">🏛️ Mesopotamian Quiz</div>
+            <div class="quiz-question" id="quiz-question"></div>
+            <div class="quiz-options" id="quiz-options"></div>
         </div>
-
+    </div>
+    
+    <div class="modal-overlay" id="win-modal">
+        <div class="quiz-modal win-modal">
+            <div class="win-title">🏆 Victory!</div>
+            <div class="win-message" id="win-message"></div>
+            <button class="new-game-btn" onclick="newGame()">Play Again</button>
+        </div>
     </div>
 
-
-    <div id="dlg" hidden>
-        <input type="file" id="dlg_multifile" multiple accept="image/*">
-        <label for="dlg_multifile">Select files</label>
-    </div>
-
-    <div id="pyconsole">
-        <div id="terminal" tabIndex=1 align="left"></div>
-    </div>
-
-    <script type="application/javascript">
-
-    async function custom_onload(debug_hidden) {
-        // this is called before anything python is loaded
-        // make your js customization here
-        console.log(__FILE__, "custom_onload")
-
-        pyconsole.hidden = debug_hidden
-        system.hidden = debug_hidden
-        transfer.hidden = debug_hidden
-        info.hidden = debug_hidden
-        box.hidden =  debug_hidden
-
-    }
-
-    function custom_prerun(){
-        // no python main and no (MEMFS + VFS) yet.
-        console.log(__FILE__, "custom_prerun")
-
-    }
-
-    function custom_postrun(){
-        // python main and no VFS filesystem yet.
-        console.log(__FILE__, "custom_postrun")
-
-        // prevent ff horizontal scroll
-        window.addEventListener("keydown", function(e) {
-            if(["Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.code) > -1) {
-                if (!python.config.debug)
-                    e.preventDefault();
+    <script>
+        // Game Constants
+        const N_PIECES = 7;
+        const TRACK_LEN = 14;
+        const ROSETTES = new Set([3, 7, 13]);
+        const SHARED = new Set([4, 5, 6, 7, 8, 9, 10, 11]);
+        const QUIZ_ROSETTES = new Set([3, 7]);
+        
+        // Board layout: [row][col] -> {pos, owner} or null
+        // Row 0 = White's private, Row 1 = Shared, Row 2 = Black's private
+        const BOARD_LAYOUT = [
+            // Row 0 - White private + empty + White end + Bear-off
+            [{pos:3,owner:0}, {pos:2,owner:0}, {pos:1,owner:0}, {pos:0,owner:0}, null, null, {pos:12,owner:0}, {pos:13,owner:0}, {pos:14,owner:0}],
+            // Row 1 - Shared middle
+            [{pos:4,owner:null}, {pos:5,owner:null}, {pos:6,owner:null}, {pos:7,owner:null}, {pos:8,owner:null}, {pos:9,owner:null}, {pos:10,owner:null}, {pos:11,owner:null}, null],
+            // Row 2 - Black private + empty + Black end + Bear-off
+            [{pos:3,owner:1}, {pos:2,owner:1}, {pos:1,owner:1}, {pos:0,owner:1}, null, null, {pos:12,owner:1}, {pos:13,owner:1}, {pos:14,owner:1}]
+        ];
+        
+        // Quiz Questions
+        const QUIZ_QUESTIONS = [
+            {q: "What prompts Ishtar to approach Gilgamesh in Uruk?", opts: ["She needs his help fighting Humbaba", "She is impressed by his beauty and desires him", "She wants him to build a temple", "She fears his power"], correct: 1},
+            {q: "Which offer does Ishtar make to persuade Gilgamesh to marry her?", opts: ["A throne in the Netherworld", "Immortality among the gods", "A chariot of lapis lazuli and gold", "Control of the Cedar Forest"], correct: 2},
+            {q: "Gilgamesh rejects Ishtar mainly because he:", opts: ["Is already married", "Swore never to marry a goddess", "Thinks she is too weak", "Reminds her she destroys her lovers"], correct: 3},
+            {q: "Gilgamesh compares Ishtar to several harmful things. Which is one?", opts: ["A river that never floods", "A shoe that bites its owner's foot", "A shield that never breaks", "A tree that bears endless fruit"], correct: 1},
+            {q: "Which former lover of Ishtar does Gilgamesh say she doomed to yearly mourning?", opts: ["Shamash", "Enkidu", "Dumuzi", "Anu"], correct: 2},
+            {q: "What does Gilgamesh claim happened to the shepherd who loved Ishtar?", opts: ["He was turned into a bird", "He was struck and turned into a wolf", "He became king of Uruk", "He was sent to the heavens"], correct: 1},
+            {q: "After being scorned, Ishtar complains to:", opts: ["Enlil", "Shamash", "Lugalbanda", "Anu"], correct: 3},
+            {q: "What does Ishtar ask Anu to give her?", opts: ["The Tablet of Destinies", "The Bull of Heaven", "The Cedar Door", "A plague for Uruk"], correct: 1},
+            {q: "How does Ishtar threaten Anu if he refuses?", opts: ["Destroy Uruk with fire", "Marry another god", "Release the dead to consume the living", "Overthrow him"], correct: 2},
+            {q: "When the Bull of Heaven arrives, what disaster happens first?", opts: ["Burns the palace", "Dries up the land and lowers the river", "Steals the city's cattle", "Knocks down the walls"], correct: 1},
+        ];
+        
+        // Game State
+        let positions = [[...Array(N_PIECES)].map(() => -1), [...Array(N_PIECES)].map(() => -1)];
+        let currentPlayer = 0;
+        let rollValue = null;
+        let legalMoves = [];
+        let selectedPiece = null;
+        let state = "await_roll";
+        let quizIndex = 0;
+        let pendingExtraTurn = false;
+        
+        // Initialize Board
+        function initBoard() {
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+            
+            for (let row = 0; row < 3; row++) {
+                for (let col = 0; col < 9; col++) {
+                    const cell = BOARD_LAYOUT[row][col];
+                    const square = document.createElement('div');
+                    square.className = 'square';
+                    square.dataset.row = row;
+                    square.dataset.col = col;
+                    
+                    if (cell === null) {
+                        square.classList.add('empty');
+                    } else {
+                        square.dataset.pos = cell.pos;
+                        square.dataset.owner = cell.owner;
+                        
+                        if (cell.pos === 14) {
+                            square.classList.add('bear-off');
+                        } else if (ROSETTES.has(cell.pos)) {
+                            square.classList.add('rosette');
+                        }
+                        
+                        square.onclick = () => handleSquareClick(cell.pos, cell.owner, row, col);
+                    }
+                    
+                    board.appendChild(square);
+                }
             }
-        }, false);
-
-    }
-
-    function debug() {
-        // allow to gain access to dev tools from js console
-        // but only on desktop. difficult to reach when in iframe
-        python.config.debug = true
-        custom_onload(false)
-        Module.PyRun_SimpleString("shell.uptime()")
-        window_resize()
-    }
-
-    function info_inline(data){
-        document.getElementById("info").innerHTML = data
-    }
-
-    function info_online(url) {
-        // display info about current APK
-        fetch( url /*, options */)
-            .then((response) => response.text())
-            .then((html) => {
-                info_inline(html);
-        })
-        .catch((error) => {
-            console.warn(error);
-        });
-    }
-
-    function frame_online(url) {
-        window.frames["iframe"].location = url;
-    }
-
+            
+            updateDisplay();
+        }
+        
+        // Roll Dice (4 binary dice)
+        function rollDice() {
+            if (state !== "await_roll") return;
+            
+            const dice = [];
+            let total = 0;
+            for (let i = 0; i < 4; i++) {
+                const val = Math.random() < 0.5 ? 0 : 1;
+                dice.push(val);
+                total += val;
+            }
+            
+            rollValue = total;
+            
+            // Update dice display
+            const diceDisplay = document.getElementById('dice-display');
+            diceDisplay.innerHTML = dice.map(d => 
+                `<div class="die ${d ? 'marked' : ''}">${d ? '●' : '○'}</div>`
+            ).join('');
+            document.getElementById('roll-total').textContent = `Roll: ${total}`;
+            
+            // Calculate legal moves
+            legalMoves = calculateLegalMoves(currentPlayer, rollValue);
+            
+            if (rollValue === 0 || legalMoves.length === 0) {
+                setMessage(rollValue === 0 ? "Rolled 0! No moves." : "No legal moves available.");
+                state = "await_continue";
+                document.getElementById('roll-btn').disabled = true;
+                document.getElementById('continue-btn').disabled = false;
+            } else {
+                setMessage(`Rolled ${rollValue}. Select a piece to move.`);
+                state = "await_select";
+                document.getElementById('roll-btn').disabled = true;
+            }
+            
+            updateDisplay();
+        }
+        
+        // Calculate Legal Moves
+        function calculateLegalMoves(player, roll) {
+            if (roll === 0) return [];
+            
+            const moves = [];
+            const opponent = 1 - player;
+            const ownPositions = positions[player];
+            const oppPositions = positions[opponent];
+            
+            const ownSet = new Set(ownPositions.filter(p => p >= 0 && p < TRACK_LEN));
+            const oppSet = new Set(oppPositions.filter(p => p >= 0 && p < TRACK_LEN));
+            
+            // Move existing pieces
+            for (let i = 0; i < ownPositions.length; i++) {
+                const pos = ownPositions[i];
+                if (pos < 0 || pos >= TRACK_LEN) continue;
+                
+                const newPos = pos + roll;
+                if (newPos > TRACK_LEN) continue;
+                
+                if (newPos === TRACK_LEN) {
+                    // Bear off
+                    moves.push({piece: i, from: pos, to: newPos, extra: false, capture: null});
+                    continue;
+                }
+                
+                // Check if can land
+                if (ownSet.has(newPos)) continue; // Own piece blocking
+                
+                let capture = null;
+                if (SHARED.has(newPos) && oppSet.has(newPos)) {
+                    if (ROSETTES.has(newPos)) continue; // Can't capture on rosette
+                    // Find which opponent piece to capture
+                    capture = oppPositions.findIndex(p => p === newPos);
+                }
+                
+                const extra = ROSETTES.has(newPos);
+                moves.push({piece: i, from: pos, to: newPos, extra, capture});
+            }
+            
+            // Enter new piece
+            if (ownPositions.includes(-1)) {
+                const entryPos = roll - 1;
+                if (entryPos >= 0 && entryPos < TRACK_LEN) {
+                    if (!ownSet.has(entryPos)) {
+                        let capture = null;
+                        if (SHARED.has(entryPos) && oppSet.has(entryPos)) {
+                            if (!ROSETTES.has(entryPos)) {
+                                capture = oppPositions.findIndex(p => p === entryPos);
+                            }
+                        }
+                        if (!SHARED.has(entryPos) || !oppSet.has(entryPos) || capture !== null) {
+                            const extra = ROSETTES.has(entryPos);
+                            moves.push({piece: null, from: -1, to: entryPos, extra, capture});
+                        }
+                    }
+                }
+            }
+            
+            return moves;
+        }
+        
+        // Handle Square Click
+        function handleSquareClick(pos, owner, row, col) {
+            if (state === "await_select") {
+                // Check if clicking on own piece
+                const player = currentPlayer;
+                
+                // Check for piece on board
+                if (pos >= 0 && pos < TRACK_LEN) {
+                    const pieceIdx = positions[player].findIndex((p, i) => 
+                        p === pos && legalMoves.some(m => m.piece === i)
+                    );
+                    if (pieceIdx !== -1 && (owner === null || owner === player)) {
+                        selectedPiece = pieceIdx;
+                        state = "await_dest";
+                        setMessage("Select destination.");
+                        updateDisplay();
+                        return;
+                    }
+                }
+                
+                // Check for off-board piece (entering)
+                if (pos <= 3 && owner === player && legalMoves.some(m => m.piece === null)) {
+                    selectedPiece = null;
+                    state = "await_dest";
+                    setMessage("Select entry destination.");
+                    updateDisplay();
+                }
+            } else if (state === "await_dest") {
+                // Find matching move
+                const move = legalMoves.find(m => 
+                    m.piece === selectedPiece && m.to === pos && (owner === null || owner === currentPlayer)
+                );
+                
+                if (move) {
+                    executeMove(move);
+                } else {
+                    // Maybe clicked different piece
+                    state = "await_select";
+                    selectedPiece = null;
+                    setMessage(`Rolled ${rollValue}. Select a piece to move.`);
+                    updateDisplay();
+                }
+            }
+        }
+        
+        // Handle Rack Click (off-board pieces)
+        function handleRackClick(player) {
+            if (state !== "await_select" || player !== currentPlayer) return;
+            
+            if (legalMoves.some(m => m.piece === null)) {
+                selectedPiece = null;
+                state = "await_dest";
+                setMessage("Select entry destination.");
+                updateDisplay();
+            }
+        }
+        
+        // Execute Move
+        function executeMove(move) {
+            const player = currentPlayer;
+            const opponent = 1 - player;
+            
+            // Handle capture
+            if (move.capture !== null) {
+                positions[opponent][move.capture] = -1;
+            }
+            
+            // Move piece
+            if (move.piece === null) {
+                // Entering new piece
+                const idx = positions[player].indexOf(-1);
+                positions[player][idx] = move.to;
+            } else {
+                positions[player][move.piece] = move.to;
+            }
+            
+            // Check for win
+            if (positions[player].every(p => p === TRACK_LEN)) {
+                showWin(player);
+                return;
+            }
+            
+            // Check for quiz rosette
+            if (move.extra && QUIZ_ROSETTES.has(move.to)) {
+                pendingExtraTurn = true;
+                showQuiz();
+                return;
+            }
+            
+            // Handle extra turn or pass
+            if (move.extra) {
+                setMessage("✦ Rosette! Roll again.");
+                state = "await_roll";
+                document.getElementById('roll-btn').disabled = false;
+                rollValue = null;
+                legalMoves = [];
+            } else {
+                currentPlayer = opponent;
+                setMessage("Turn passes. Click Roll.");
+                state = "await_roll";
+                document.getElementById('roll-btn').disabled = false;
+                rollValue = null;
+                legalMoves = [];
+            }
+            
+            selectedPiece = null;
+            updateDisplay();
+        }
+        
+        // End Turn (continue button)
+        function endTurn() {
+            if (state !== "await_continue") return;
+            
+            currentPlayer = 1 - currentPlayer;
+            state = "await_roll";
+            rollValue = null;
+            legalMoves = [];
+            document.getElementById('roll-btn').disabled = false;
+            document.getElementById('continue-btn').disabled = true;
+            setMessage("Click Roll.");
+            updateDisplay();
+        }
+        
+        // Show Quiz
+        function showQuiz() {
+            const quiz = QUIZ_QUESTIONS[quizIndex % QUIZ_QUESTIONS.length];
+            document.getElementById('quiz-question').textContent = quiz.q;
+            
+            const optionsDiv = document.getElementById('quiz-options');
+            optionsDiv.innerHTML = quiz.opts.map((opt, i) => 
+                `<div class="quiz-option" onclick="answerQuiz(${i})">${opt}</div>`
+            ).join('');
+            
+            document.getElementById('quiz-modal').classList.add('active');
+        }
+        
+        // Answer Quiz
+        function answerQuiz(choice) {
+            const quiz = QUIZ_QUESTIONS[quizIndex % QUIZ_QUESTIONS.length];
+            const options = document.querySelectorAll('.quiz-option');
+            
+            options.forEach((opt, i) => {
+                opt.onclick = null;
+                if (i === quiz.correct) {
+                    opt.classList.add('correct');
+                } else if (i === choice && i !== quiz.correct) {
+                    opt.classList.add('incorrect');
+                }
+            });
+            
+            quizIndex++;
+            
+            setTimeout(() => {
+                document.getElementById('quiz-modal').classList.remove('active');
+                
+                if (choice === quiz.correct) {
+                    setMessage("✓ Correct! Roll again.");
+                    state = "await_roll";
+                    document.getElementById('roll-btn').disabled = false;
+                } else {
+                    setMessage("✗ Incorrect. Turn passes.");
+                    currentPlayer = 1 - currentPlayer;
+                    state = "await_roll";
+                    document.getElementById('roll-btn').disabled = false;
+                }
+                
+                rollValue = null;
+                legalMoves = [];
+                pendingExtraTurn = false;
+                updateDisplay();
+            }, 1500);
+        }
+        
+        // Show Win
+        function showWin(player) {
+            const name = player === 0 ? "White" : "Black";
+            document.getElementById('win-message').textContent = `${name} has borne off all pieces!`;
+            document.getElementById('win-modal').classList.add('active');
+        }
+        
+        // New Game
+        function newGame() {
+            positions = [[...Array(N_PIECES)].map(() => -1), [...Array(N_PIECES)].map(() => -1)];
+            currentPlayer = 0;
+            rollValue = null;
+            legalMoves = [];
+            selectedPiece = null;
+            state = "await_roll";
+            
+            document.getElementById('win-modal').classList.remove('active');
+            document.getElementById('roll-btn').disabled = false;
+            document.getElementById('continue-btn').disabled = true;
+            document.getElementById('dice-display').innerHTML = '<div class="die">?</div>'.repeat(4);
+            document.getElementById('roll-total').textContent = 'Roll: —';
+            setMessage("Click Roll to start!");
+            updateDisplay();
+        }
+        
+        // Update Display
+        function updateDisplay() {
+            // Update turn display
+            document.getElementById('turn-display').textContent = currentPlayer === 0 ? "White ☀" : "Black ☽";
+            
+            // Update scores
+            document.getElementById('white-score').textContent = 
+                `${positions[0].filter(p => p === TRACK_LEN).length}/7`;
+            document.getElementById('black-score').textContent = 
+                `${positions[1].filter(p => p === TRACK_LEN).length}/7`;
+            
+            // Clear all pieces and highlights
+            document.querySelectorAll('.square').forEach(sq => {
+                sq.classList.remove('highlight', 'destination');
+                const existingPiece = sq.querySelector('.piece');
+                if (existingPiece) existingPiece.remove();
+            });
+            
+            // Place pieces on board
+            for (let player = 0; player < 2; player++) {
+                for (let i = 0; i < positions[player].length; i++) {
+                    const pos = positions[player][i];
+                    if (pos >= 0 && pos <= TRACK_LEN) {
+                        const square = findSquare(pos, player);
+                        if (square) {
+                            const piece = document.createElement('div');
+                            piece.className = `piece ${player === 0 ? 'white' : 'black'}`;
+                            piece.dataset.pieceIdx = i;
+                            piece.dataset.player = player;
+                            square.appendChild(piece);
+                        }
+                    }
+                }
+            }
+            
+            // Highlight legal pieces/destinations
+            if (state === "await_select") {
+                legalMoves.forEach(move => {
+                    if (move.piece !== null) {
+                        const pos = positions[currentPlayer][move.piece];
+                        const square = findSquare(pos, currentPlayer);
+                        if (square) square.classList.add('highlight');
+                    }
+                });
+                
+                // Highlight rack if can enter
+                if (legalMoves.some(m => m.piece === null)) {
+                    // Visual cue for entering pieces would go here
+                }
+            } else if (state === "await_dest" && selectedPiece !== undefined) {
+                const moves = legalMoves.filter(m => m.piece === selectedPiece);
+                moves.forEach(move => {
+                    const square = findSquare(move.to, currentPlayer);
+                    if (square) square.classList.add('destination');
+                });
+            }
+        }
+        
+        // Find Square Element
+        function findSquare(pos, player) {
+            // For shared squares or bear-off
+            const squares = document.querySelectorAll('.square');
+            for (const sq of squares) {
+                if (sq.dataset.pos === String(pos)) {
+                    const owner = sq.dataset.owner;
+                    if (owner === "null" || owner === String(player) || pos === TRACK_LEN) {
+                        return sq;
+                    }
+                }
+            }
+            return null;
+        }
+        
+        // Set Message
+        function setMessage(msg) {
+            document.getElementById('message').textContent = msg;
+        }
+        
+        // Initialize on load
+        initBoard();
     </script>
-
 </body>
 </html>
