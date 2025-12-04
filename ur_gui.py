@@ -134,7 +134,7 @@ class RoyalGameOfUr:
 SQUARE = 72
 GAP = 8
 # Extra horizontal room for piece racks and counters on left/right of board
-MARGIN_X = 170
+MARGIN_X = 210
 MARGIN_Y = 60
 
 BOARD_ROWS = 3
@@ -578,7 +578,7 @@ def main():
 
                     # Clicked off-board rack?
                     # We'll place racks as circles left side; detect via simple region test.
-                    rack_area = pygame.Rect(MARGIN_X - 70, MARGIN_Y, 50, BOARD_ROWS*(SQUARE + GAP))
+                    rack_area = pygame.Rect(MARGIN_X - 70, MARGIN_Y, 60, BOARD_ROWS*(SQUARE + GAP))
                     if rack_area.collidepoint(mx, my):
                         if piece_can_move(None):
                             selected_piece = None
@@ -788,7 +788,7 @@ def main():
                                 pygame.draw.rect(screen, HILITE, sq.rect, 5, border_radius=8)
                 # highlight offboard rack if enter move exists
                 if piece_can_move(None):
-                    rack_rect = pygame.Rect(MARGIN_X - 70, MARGIN_Y, 50, board_h)
+                    rack_rect = pygame.Rect(MARGIN_X - 70, MARGIN_Y, 60, board_h)
                     pygame.draw.rect(screen, HILITE, rack_rect, 4, border_radius=8)
 
             if state == "await_dest":
@@ -821,6 +821,12 @@ def main():
             # Rack positions - left side for waiting pieces
             rack_x = MARGIN_X - 50
             rack_top = MARGIN_Y + (0 if p == 0 else 2)*(SQUARE + GAP)
+            counter_y = rack_top + SQUARE // 2 - 10  # Vertically centered with the row
+            
+            # Left counter: pieces waiting to enter (to the LEFT of pieces)
+            left_count_text = font.render(str(off_count), True, TEXT)
+            screen.blit(left_count_text, (rack_x - 35, counter_y))
+            
             # Ancient-style off-board piece storage
             for i in range(off_count):
                 cy = rack_top + 10 + i*14
@@ -831,14 +837,9 @@ def main():
                 pygame.draw.circle(screen, edge_color, (rack_x, cy), 7)      # Shadow
                 pygame.draw.circle(screen, piece_color, (rack_x, cy), 6)     # Main piece
                 pygame.draw.circle(screen, edge_color, (rack_x, cy), 4, 1)   # Inner ring
-            
-            # Left counter: pieces waiting to enter
-            counter_y = rack_top + SQUARE - 5
-            left_count_text = font.render(str(off_count), True, TEXT)
-            screen.blit(left_count_text, (rack_x - left_count_text.get_width()//2, counter_y))
                 
             # Borne-off pieces in ancient style on right
-            bx = MARGIN_X + board_w + 40
+            bx = MARGIN_X + board_w + 50
             for i in range(borne_count):
                 by = rack_top + 10 + i*14
                 piece_color = WHITE_PIECE if p == 0 else BLACK_PIECE
@@ -850,9 +851,9 @@ def main():
                 # Victory marking - small star
                 pygame.draw.circle(screen, edge_color, (bx, by), 2, 0)
             
-            # Right counter: pieces that have crossed/finished
+            # Right counter: pieces that have crossed/finished (to the RIGHT of pieces)
             right_count_text = font.render(str(borne_count), True, TEXT)
-            screen.blit(right_count_text, (bx - right_count_text.get_width()//2, counter_y))
+            screen.blit(right_count_text, (bx + 20, counter_y))
 
         # Bull of Heaven capture animation
         if state == "capture_anim" and capture_square is not None:
