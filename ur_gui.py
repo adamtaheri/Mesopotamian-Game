@@ -421,12 +421,11 @@ async def main():
     pygame.display.set_caption("𒌫𒊒 - Royal Game of Ur - Ancient Mesopotamia")
     clock = pygame.time.Clock()
 
-    font = pygame.font.SysFont(None, 28)
-    font_big = pygame.font.SysFont(None, 34)
+    font = pygame.font.Font(None, 28)
+    font_big = pygame.font.Font(None, 34)
 
     # Load Bull of Heaven graphic for capture animation
-    bull_path = os.path.join(os.path.dirname(__file__), "bull.png")
-    bull_img = pygame.image.load(bull_path).convert_alpha()
+    bull_img = pygame.image.load("bull.png").convert_alpha()
     bull_size = int(SQUARE * 1.5)
     bull_img = pygame.transform.smoothscale(bull_img, (bull_size, bull_size))
 
