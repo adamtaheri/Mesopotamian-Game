@@ -787,9 +787,10 @@ def main():
                         for sq in squares_for_pos(pos):
                             if sq.owner is None or sq.owner == p:
                                 pygame.draw.rect(screen, HILITE, sq.rect, 5, border_radius=8)
-                # highlight offboard rack if enter move exists
+                # highlight offboard rack if enter move exists (only current player's row)
                 if piece_can_move(None):
-                    rack_rect = pygame.Rect(MARGIN_X - 70, MARGIN_Y, 60, board_h)
+                    rack_y = MARGIN_Y + (0 if p == 0 else 2) * (SQUARE + GAP)
+                    rack_rect = pygame.Rect(MARGIN_X - 70, rack_y, 60, SQUARE)
                     pygame.draw.rect(screen, HILITE, rack_rect, 4, border_radius=8)
 
             if state == "await_dest":
